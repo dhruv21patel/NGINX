@@ -1,0 +1,17 @@
+options {
+    directory: "/var/cache/bind"
+    allow-query { any; }
+    recursion no;
+}
+
+
+zone "dhruv.com"{
+    type master;
+    file "etc/bind/db.example.com";
+};
+
+zone "dhruv.com"{
+    type slave;
+    masters { local_master }
+    file "etc/bind/db.example.com"
+}

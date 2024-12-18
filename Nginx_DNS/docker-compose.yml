@@ -1,0 +1,38 @@
+
+services:
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - webserver
+
+
+  local_master:
+    image: mjkaye/bind9-alpine:latest
+    volumes:
+      - ./dns/master:/etc/bind 
+    environment:
+      - TZ=UTC
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+
+
+  local_slave: 
+    image: mjkaye/bind9-alpine:latest
+    volumes:
+      - ./dns/slave:/etc/bind
+    environment:
+      - TZ=UTC
+
+  
+  webserver:
+    build: 
+      context: ./webserver
+    ports:
+      - "8080:80"
+
