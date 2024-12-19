@@ -57,58 +57,66 @@ project-directory/
 ```
 ---
 ## Services Explained
+Services Explained
 1. **DNS Master Server**
-Purpose: Primary DNS server managing zone files.
+Purpose: Primary DNS server responsible for managing zone files and resolving domain names.
 Base Image: internetsystemsconsortium/bind9:9.18
 Key Files:
-named.conf: Configures zones and allows transfers to the slave.
-db.example.local: Contains A records and SOA configuration for example.local.
-Static IP: 192.168.1.2
+named.conf: The main configuration file for BIND9, defining zones and settings.
+db.example.local: The zone file that contains A records and SOA (Start of Authority) records for the example.local domain.
+IP Address: Static IP 192.168.1.2
+The DNS master is configured to handle DNS queries for the example.local domain and synchronize with the slave DNS server.
+Why we use it: This server is responsible for managing the authoritative DNS records for the domain and updating the slave DNS server.
 2. **DNS Slave Server**
-Purpose: Backup DNS server to replicate master zones.
+Purpose: Backup DNS server that synchronizes zone files from the master DNS server to provide redundancy.
 Base Image: internetsystemsconsortium/bind9:9.18
 Key Files:
-named.conf: Configures zone as a slave and synchronizes from the master.
-Static IP: 192.168.1.3
-3. **Web Server**
-Purpose: Serves static content and validates DNS resolution.
+named.conf: The configuration for the DNS slave, which points to the master server for zone transfers.
+IP Address: Static IP 192.168.1.3
+The DNS slave server acts as a backup to the master and provides DNS services if the master becomes unavailable.
+Why we use it: Redundancy in DNS servers ensures continuous resolution of domain names, even if the master server goes down.
+3. **Web Server (NGINX)**
+Purpose: A simple NGINX web server that serves static content to validate the DNS resolution.
 Base Image: nginx:latest
 Configuration:
-Static IP: 192.168.1.1
-Mounted static folder with index.html.
+Serves the static content in the /static folder, with an index.html file as the home page.
+Static IP 192.168.1.1
+This web server is the target of DNS resolution, so the DNS records for www.example.local point to this server.
+Why we use it: The web server serves as the final destination of the DNS resolution, hosting a simple static webpage to verify that DNS is working.
 4. **Custom Network**
-Purpose: Ensures consistent IP allocation and inter-container communication.
+Purpose: A Docker network that ensures containers can communicate with each other by using static IP addresses.
 Subnet: 192.168.1.0/24
-How to Run
+The custom network ensures that the DNS servers (both master and slave) and the web server all reside in the same network and can resolve the domain names correctly.
+Why we use it: A custom network simplifies inter-container communication and ensures consistent IP addresses, which are required for DNS resolution.
+---
+## How to Run
 - **Step 1: Create the Custom Network**
-bash
-Copy code
-docker network create --subnet=192.168.1.0/24 custom-network
-- **Step 2: Bring Up Containers**
-bash
-Copy code
-docker-compose up -d
-- **Step 3: Verify Setup**
-Check running containers:
-bash
-Copy code
-docker ps
-Inspect the network:
-bash
-Copy code
-docker network inspect custom-network
-- **Step 4: Test DNS Resolution**
-Use a tool like dig or nslookup:
-
 ```bash
-Copy code
+docker network create --subnet=192.168.1.0/24 custom-network 
+```
+- **Step 2: Bring Up Containers**
+```bash
+docker-compose up -d
+```
+- **Step 3: Verify Setup**
+### Check running containers:
+``` bash
+docker ps
+```
+### Inspect the network:
+```bash
+docker network inspect custom-network
+```
+- **Step 4: Test DNS Resolution**
+### Use a tool like dig or nslookup:
+```bash
 dig @192.168.1.2 www.example.local
-Configuration Details
-DNS Master Zone File
-File: db.example.local
+```
 
-text
-Copy code
+## Configuration Details
+- **DNS Master Zone File**
+- File: db.example.local
+```bash
 $TTL 86400
 @   IN  SOA     dns1.example.local. admin.example.local. (
                     2024121801 ; Serial
@@ -126,29 +134,16 @@ www     IN  A   192.168.1.1
 ```
 ---
 # NGINX Configuration
-File: nginx.conf
+- **File: nginx.conf**
+- **nginx**
+``` bash
+    server {
+        listen 80;
+        server_name localhost;
 
-nginx
-Copy code
-server {
-    listen 80;
-    server_name localhost;
-
-    location / {
-        root /usr/share/nginx/html;
-        index index.html;
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
     }
-}
-# Testing
--   **1. Access the Web Server**
-Open a browser and navigate to:
-
-arduino
-Copy code
-http://www.example.local
--   **2. DNS Redundancy**
-Shut down the master DNS container and verify that the slave DNS resolves www.example.local.
-Notes
-Static IPs are crucial for DNS records; they are defined in docker-compose.yml.
-Ensure the master DNS server synchronizes with the slave before testing redundancy.
-Use tools like Wireshark to debug DNS queries if needed.
+```
