@@ -37,7 +37,7 @@ Below is the architecture of the setup:
 ### Architecture Diagram
 *(Diagram Description: A custom Docker network connecting the DNS master, DNS slave, and NGINX web server with assigned static IPs.)*
 
-> Unfortunately, I cannot generate or include diagrams directly in a text-only README. However, you can use tools like [draw.io](https://draw.io) or [Excalidraw](https://excalidraw.com) to create a network diagram.
+
 
 ---
 
